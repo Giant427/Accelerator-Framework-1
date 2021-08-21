@@ -1,8 +1,0 @@
-{
-    "Lua.diagnostics.disable": [
-        "empty-block"
-    ],
-    "Lua.diagnostics.ignore": [
-        "LookVector"
-    ]
-}
