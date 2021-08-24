@@ -22,6 +22,9 @@ characterUpdate.OnServerEvent:Connect(function(player,task,theta)
 
 		local bodyPos = Instance.new("BodyPosition")
 		bodyPos.Parent = tiltPart
+		bodyPos.D = 5000
+		bodyPos.P = 1000000
+		bodyPos.MaxForce = Vector3.new(1000000,1000000,1000000)
 		
 		local neck = player.Character.Head.Neck
 		local waist = player.Character.UpperTorso.Waist
@@ -34,11 +37,11 @@ characterUpdate.OnServerEvent:Connect(function(player,task,theta)
 		local lShoulderC0 = lShoulder.C0
 
 		game:GetService("RunService").Heartbeat:Connect(function(dt)
-			local value = tiltPart.Position.x;
-			neck.C0 = neckC0 * CFrame.fromEulerAnglesYXZ(value*0.5, 0, 0);
-			waist.C0 = waistC0 * CFrame.fromEulerAnglesYXZ(value*0.5, 0, 0);
-			rShoulder.C0 = rShoulderC0 * CFrame.fromEulerAnglesYXZ(value*0.5, 0, 0);
-			lShoulder.C0 = lShoulderC0 * CFrame.fromEulerAnglesYXZ(value*0.5, 0, 0);
+			local value = tiltPart.Position.X
+			neck.C0 = neckC0 * CFrame.fromEulerAnglesYXZ(value*0.5, 0, 0)
+			waist.C0 = waistC0 * CFrame.fromEulerAnglesYXZ(value*0.5, 0, 0)
+			rShoulder.C0 = rShoulderC0 * CFrame.fromEulerAnglesYXZ(value*0.5, 0, 0)
+			lShoulder.C0 = lShoulderC0 * CFrame.fromEulerAnglesYXZ(value*0.5, 0, 0)
 		end)
 	end
 	if task == "Update" then
