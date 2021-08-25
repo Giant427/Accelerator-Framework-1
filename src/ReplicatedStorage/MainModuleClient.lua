@@ -5,38 +5,44 @@ local module = {}
 
 -- gun object properties
 module.gun = {
-	player = nil;
-	mouse = nil;
-	viewmodel = nil;
+	player = nil,
+	mouse = nil,
+	viewmodel = nil,
 
 	-- weapon details
-	weaponName = "";
-	weaponType = "";
+	weaponName = "",
+	weaponType = "",
 
 	-- stats for the gun
-	delay = 0;
-	headshotDamage = 0;
-	bodyshotDamage = 0;
-	recoil = nil;
-	recoilAngle = nil;
+	delay = 0,
+	headshotDamage = 0,
+	bodyshotDamage = 0,
+	curshot = 0,
+	lastClick = tick(),
+	recoilReset = 1,
+	recoilPattern = {
+		{10,   4,   4, 0.77, 0.1},
+		{20, 0.1, 0.1,    1, -80},
+		{30, 0.1, 0.1,    1,  80},
+	},
 
 	-- animations
-	holdAnim = nil;
-	aimAnim = nil;
-	shootAnim = nil;
-	reloadAnim = nil;
+	holdAnim = nil,
+	aimAnim = nil,
+	shootAnim = nil,
+	reloadAnim = nil,
 
 	-- values in playerVars used for moderation
-	equipped = nil;
-	reloading = nil;
-	ammo = nil;
-	magAmmo = nil;
+	equipped = nil,
+	reloading = nil,
+	ammo = nil,
+	magAmmo = nil,
 
 	-- used for full auto configuration
-	playerHoldingMouse = false;
-	canFire = true;
+	playerHoldingMouse = false,
+	canFire = true,
 
-	remote = nil;
+	remote = nil,
 }
 
 -- create a new gun object with given properties
@@ -229,40 +235,19 @@ end
 -- shoot and bullet functions
 function module.gun:Recoil()
 	local Run = game:GetService("RunService")
-	--[[
-		This table controls the recoil that the gun will follow through each shot.
-		For example, {3, 12, -1, 0.77, -0.1}.
-		The way it works is the camera will move up by 12 for the first 3 shots of the gun.
-		After, it will move down by 1 (or up by -1 to be more technical).
-		The 0.77 is the alpha that will be used for lerping (how fast the recoil will move).
-		And the final number, -0.1, will be the ratio that the recoil will move by to the left / right.
-		In this case, it'll move 12 * 0.1 times to the right, then -1 * 0.1 times again.
-	]]--
+	local Camera = game.Workspace.CurrentCamera
 
-	local RecoilPattern = {
-		{3, 5, -1, 0.77, -0.1},
-		{6, 5, -1, 0.77, 0.1},
-		{8, 5, -1, 0.77, -0.1},
-		{10, 5, -1, 0.77, 0.1},
-	}
-
-	local RecoilReset = 0.5 -- Time it takes for recoil pattern to reset back to 1
-
-	local curshot = 0
-	local lastclick = tick()
-
-	local function lerp(a, b, t) -- Gets a number between two points using an alpha
+	local function lerp(a, b, t)
 		return a * (1 - t) + (b * t)
 	end
 
-	local Camera = game.Workspace.CurrentCamera
-
 	local function ShootRecoil()
-		curshot = (tick() - lastclick > RecoilReset and 1 or curshot + 1) -- Either reset or or increase the current shot we're at
-		lastclick = tick()
-		for i, v in pairs(RecoilPattern) do
-			if curshot <= v[1] then -- Found the current recoil we're at
-				spawn(function()
+		self.curshot = (tick() - self.lastClick > self.recoilReset and 1 or self.curshot + 1) -- Either reset or increase the current shot we're at
+		self.lastClick = tick()
+
+		for i, v in pairs(self.recoilPattern) do
+			if self.curshot <= v[1] then -- Found the current recoil we're at
+				task.spawn(function()
 					local num = 0
 					while math.abs(num - v[2]) > 0.01 do
 						num = lerp(num, v[2], v[4])
@@ -283,10 +268,10 @@ function module.gun:Recoil()
 	end
 
 	local originalCFrame = self.viewmodel.HumanoidRootPart.CFrame
-	self.viewmodel.HumanoidRootPart.CFrame *= CFrame.new(0,0,-1)
+	self.viewmodel.HumanoidRootPart.CFrame = self.viewmodel.HumanoidRootPart.CFrame * CFrame.new(0,0,-1)
+	ShootRecoil()
 	task.wait()
 	self.viewmodel.HumanoidRootPart.CFrame = originalCFrame
-	ShootRecoil()
 end
 
 -- used for semi auto and full auto configurations
