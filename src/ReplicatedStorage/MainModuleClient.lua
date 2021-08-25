@@ -1,4 +1,5 @@
 local uis = game:GetService("UserInputService")
+local cas = game:GetService("ContextActionService")
 local runService = game:GetService("RunService")
 
 local module = {}
@@ -99,12 +100,7 @@ function module.gun:Equip()
 
 	-----------------------------------------------------------------------------------------------------------------------------------------------------
 
-	uis.InputBegan:Connect(function(input)
-		self:inputBegan(input)
-	end)
-	uis.InputEnded:Connect(function(input)
-		self:inputEnded(input)
-	end)
+	self:EnableInput()
 	runService.Heartbeat:Connect(function(dt)
 		self:heartbeat(dt)
 	end)
@@ -112,11 +108,14 @@ end
 
 function module.gun:Unequip()
 	self.equipped.Value = false
-
 	self.holdAnim:Stop()
-
 	self.player.PlayerGui.Crosshair.Frame.Visible = false
 	self.mouse.Icon = ""
+
+	-- unbinding actions
+	cas:UnbindAction("Reload")
+	cas:UnbindAction("MouseButton1")
+	cas:UnbindAction("MouseButton2")
 
 	-- remove welds
 	self.viewmodel:WaitForChild("HumanoidRootPart").Handle.Part1 = nil
@@ -133,84 +132,105 @@ function module.gun:Unequip()
 	end
 end
 
--- base functions i.e. everything runs based on these functions
-function module.gun:inputBegan(input)
-	if self.equipped.Value == true then
+-- player input
+function module.gun:EnableInput()
+	local reload = "Reload"
+	local mouse1 = "MouseButton1"
+	local mouse2 = "MouseButton2"
+
+	local function handleInput(actionName, inputState, inputObject)
 		-- reload
-		if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.R then --
+		if actionName == reload and inputState == Enum.UserInputState.Begin then
 			if self.reloading.Value == false and self.ammo.Value < self.magAmmo.Value then
 				self:Reload()
 			end
 		end
 
-		-- shoot
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			-- full auto configuration
-			if self.weaponType == "FullAuto" then
-				self.playerHoldingMouse = true
-			end
+		-- mouse button 1
+		if actionName == mouse1 then
+			-- begin
+			if inputState == Enum.UserInputState.Begin then
+				-- full auto configuration
+				if self.weaponType == "FullAuto" then
+					self.playerHoldingMouse = true
+				end
 
-			-- semi auto configuration
-			if self.weaponType == "SemiAuto" then
-				if self.canFire then
-					self.canFire = false
-					self:Shoot()
-					wait(self.delay)
-					self.canFire = true
+				-- semi auto configuration
+				if self.weaponType == "SemiAuto" then
+					if self.canFire then
+						self.canFire = false
+						self:Shoot()
+						wait(self.delay)
+						self.canFire = true
+					end
+				end
+
+				-- burst configuration
+				if self.weaponType == "Burst" then
+					if self.canFire then
+						self.canFire = false
+						self:BurstShoot()
+						wait(self.delay)
+						self.canFire = true
+					end
+				end
+
+				-- sniper configuration
+				if self.weaponType == "Sniper" then
+					if self.canFire then
+						self.canFire = false
+						self:SniperShoot()
+						wait(self.delay)
+						self.canFire = true
+					end
 				end
 			end
 
-			-- burst configuration
-			if self.weaponType == "Burst" then
-				if self.canFire then
-					self.canFire = false
-					self:BurstShoot()
-					wait(self.delay)
-					self.canFire = true
-				end
-			end
-
-			-- sniper configuration
-			if self.weaponType == "Sniper" then
-				if self.canFire then
-					self.canFire = false
-					self:SniperShoot()
-					wait(self.delay)
-					self.canFire = true
+			-- end
+			if inputState == Enum.UserInputState.End then
+				-- full auto configuration
+				if self.weaponType == "FullAuto" then
+					self.playerHoldingMouse = false
 				end
 			end
 		end
 
-		-- aim down sights
-		if input.UserInputType == Enum.UserInputType.MouseButton2 and self.reloading.Value == false then
-			self:AimSight()
+		-- mouse button 2
+		if actionName == mouse2 then
+			-- begin
+			if inputState == Enum.UserInputState.Begin then
+				if self.reloading.Value == false then
+					self:AimSight()
+				end
+			end
+
+			-- end
+			if inputState == Enum.UserInputState.End then
+				if self.reloading.Value == false then
+					self:AimHand()
+				end
+			end
 		end
 	end
-end
 
-function module.gun:inputEnded(input)
-	if self.equipped.Value == true then
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			-- full auto configuration
-			if self.weaponType == "FullAuto" then
-				self.playerHoldingMouse = false
-			end
-		end
-
-		-- dont aim down sights
-		if input.UserInputType == Enum.UserInputType.MouseButton2 and self.reloading.Value == false then
-			self:AimHand()
-		end
-	end
+	-- reload
+	cas:BindAction(reload, handleInput, true, Enum.KeyCode.R)
+	cas:SetTitle(reload,"Reload")
+	-- mouse button 1
+	cas:BindAction(mouse1, handleInput, true, Enum.UserInputType.MouseButton1)
+	cas:SetTitle(mouse1,"Shoot")
+	-- mouse button 2
+	cas:BindAction(mouse2, handleInput, true, Enum.UserInputType.MouseButton2)
+	cas:SetTitle(mouse2,"Aim")
 end
 
 function module.gun:heartbeat(dt)
 	if self.equipped.Value == true then
-		if self.playerHoldingMouse then
-			if self.canFire then
+		if self.playerHoldingMouse == true then
+			if self.canFire == true then
 				self.canFire = false
 				self:Shoot()
-				wait(self.delay)
+				task.wait(self.delay)
 				self.canFire = true
 			end
 		end
