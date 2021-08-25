@@ -30,7 +30,7 @@ local function updateViewmodel(dt)
 	end
 	
 	swayViewmodel()
-	if localPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0,0,0) then
+	if localPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0,0,0) and localPlayer.Character.Humanoid.WalkSpeed >= 16 then
 		bobViewmodel()
 	end
 	
