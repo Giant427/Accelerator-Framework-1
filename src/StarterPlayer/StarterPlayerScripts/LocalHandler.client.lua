@@ -40,6 +40,5 @@ characterUpdate:FireServer("Setup")
 
 while wait() do
 	wait(0.1)
-	local camCframe = camera.CFrame
 	characterUpdate:FireServer("Update",viewmodel.HumanoidRootPart.CFrame)
 end
