@@ -71,6 +71,11 @@ local function shootBullet(playerName,hitPosition,barrel,bullet)
 end
 
 viewmodel.Parent = game.Workspace.CurrentCamera
+for _,v in pairs(viewmodel:GetDescendants()) do
+	if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" and v.Name ~= "CameraBone" then
+		v.Transparency = 1
+	end
+end
 game:GetService("RunService").RenderStepped:Connect(updateViewmodel)
 characterUpdateRemote:FireServer("Setup")
 shootBulletRemote.OnClientEvent:Connect(shootBullet)
