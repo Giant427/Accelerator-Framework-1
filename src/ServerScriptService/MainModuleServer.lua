@@ -99,10 +99,10 @@ function module.gun:Shoot()
 
 		local raycastParams = RaycastParams.new()
 		raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-		raycastParams.FilterDescendantsInstances = {character}
+		raycastParams.FilterDescendantsInstances = {character,busyBulletHoles:GetDescendants()}
 		raycastParams.IgnoreWater = true
 
-		local raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 100,raycastParams)
+		local raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 1000,raycastParams)
 
 		self.ammo.Value -= 1
 		if self.weaponType == "Sniper" then
@@ -120,7 +120,7 @@ function module.gun:Shoot()
 			raycastParams.FilterDescendantsInstances = {}
 			raycastParams.IgnoreWater = false
 
-			raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 100,raycastParams)
+			raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 1000,raycastParams)
 
 			if raycastResult then
 				self:ShootBullet(raycastResult.Position)
@@ -133,18 +133,19 @@ function module.gun:Shoot()
 	end
 end
 
-function module.gun:MakeBulletHole(hitPosition,hitPart,normal)
+function module.gun:MakeBulletHole(Task,hitPosition,hitPart,normal)
 	local bulletHole = availableBulletHoles:FindFirstChild("BulletHole")
 	bulletHole.Parent = busyBulletHoles
-
 	bulletHole.CFrame = CFrame.new(hitPosition, hitPosition + normal)
-	if hitPart.Parent:FindFirstChild("Humanoid") then
+
+	if Task == "Hurt" then
 		if hitPart.Name == "Head" then
 			bulletHole.HitHeadshotSound:Play()
 		else
 			bulletHole.HitBodyshotSound:Play()
 		end
-	else
+	end
+	if Task == "Hit" then
 		bulletHole.Image.Transparency = 0
 		bulletHole.Smoke:Emit()
 		if hitPart.Material == Enum.Material.CorrodedMetal or hitPart.Material == Enum.Material.Metal then
@@ -154,9 +155,10 @@ function module.gun:MakeBulletHole(hitPosition,hitPart,normal)
 		end
 	end
 
-	task.wait(30)
+	task.wait(10)
 	bulletHole.Image.Transparency = 1
 	bulletHole.CFrame = CFrame.new(Vector3.new(0,-100,0), Vector3.new(0,0,0))
+	bulletHole.Parent = availableBulletHoles
 end
 
 function module.gun:ShootBullet(hitPosition)
@@ -185,37 +187,42 @@ function module.gun:Hit(hitPart,hitPosition,normal,invincible)
 	local character = self.player.Character
 	local barrel = character:FindFirstChild(self.weaponName).GunComponents.Barrel
 
-	if hitPart.Parent:FindFirstChild("Humanoid") then
+	local function bulletHole(Task)
+		self:MakeBulletHole(Task,hitPosition,hitPart,normal)
+	end
+
+	if hitPart:FindFirstAncestorWhichIsA("Model"):FindFirstChildWhichIsA("Humanoid") then
+		task.spawn(bulletHole,"Hurt")
 		self:Kill(hitPart)
 		self:ShootBullet(hitPosition)
 	else
+		task.spawn(bulletHole,"Hit")
 		if hitPart.Material == Enum.Material.Glass or hitPart.Material == Enum.Material.Plastic or hitPart.Material == Enum.Material.SmoothPlastic or hitPart.Material == Enum.Material.Wood or hitPart.Material == Enum.Material.WoodPlanks then
-			table.insert(cantHit,(#cantHit + 1),hitPart)
+			table.insert(cantHit,hitPart)
 			self:Wallbang(hitPosition,cantHit)
 		else
 			self:ShootBullet(hitPosition)
 		end
 	end
-
-	self:MakeBulletHole(hitPosition,hitPart,normal)
 end
 
 function module.gun:Wallbang(hitPosition,invincible)
+	local invincible_2 = invincible
+	table.insert(invincible_2,busyBulletHoles:GetDescendants())
 	local raycastParams = RaycastParams.new()
 	raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-	raycastParams.FilterDescendantsInstances = invincible
+	raycastParams.FilterDescendantsInstances = invincible_2
 	raycastParams.IgnoreWater = true
 
-	local raycastResult = game.Workspace:Raycast(hitPosition,self.aimDirection.Value * 100,raycastParams)
-
+	local raycastResult = game.Workspace:Raycast(hitPosition,self.aimDirection.Value * 1000,raycastParams)
 	if raycastResult then
-		self:Hit(raycastResult.Instance,raycastResult.Position,raycastResult.Normal,invincible)
+		self:Hit(raycastResult.Instance,raycastResult.Position,raycastResult.Normal,invincible_2)
 	else
 		raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
 		raycastParams.FilterDescendantsInstances = {}
 		raycastParams.IgnoreWater = false
 
-		raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 100,raycastParams)
+		raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 1000,raycastParams)
 
 		if raycastResult then
 			self:ShootBullet(raycastResult.Position)
