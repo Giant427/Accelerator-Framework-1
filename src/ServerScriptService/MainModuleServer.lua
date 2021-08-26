@@ -1,4 +1,7 @@
 local RepStorage = game:GetService("ReplicatedStorage")
+local bulletHolesFolder = game.Workspace:WaitForChild("BulletHolesFolder")
+local availableBulletHoles = bulletHolesFolder:WaitForChild("AvailableBulletHoles")
+local busyBulletHoles = bulletHolesFolder:WaitForChild("BusyBulletHoles")
 
 local module = {}
 
@@ -84,7 +87,6 @@ function module.gun:Shoot()
 	if self.ammo.Value > 0 and self.reloading.Value == false then
 		local character = self.player.Character
 		local barrel = character:FindFirstChild(self.weaponName).GunComponents.Barrel
-		local muzzleEffect = barrel.MuzzleEffect
 		local shootSound = barrel.ShootSound
 
 		local raycastParams = RaycastParams.new()
@@ -98,15 +100,13 @@ function module.gun:Shoot()
 		if self.weaponType == "Sniper" then
 			self:AimHand()
 			self.shootAnim:Play()
-			muzzleEffect:Emit()
 			shootSound:Play()
 		else
-			muzzleEffect:Emit()
 			shootSound:Play()
 		end
 
 		if raycastResult then
-			self:Hit(raycastResult.Instance,raycastResult.Position,{character})
+			self:Hit(raycastResult.Instance,raycastResult.Position,raycastResult.Normal,{character})
 		else
 			raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
 			raycastParams.FilterDescendantsInstances = {}
@@ -125,12 +125,38 @@ function module.gun:Shoot()
 	end
 end
 
+function module.gun:MakeBulletHole(hitPosition,hitPart,normal)
+	local bulletHole = availableBulletHoles:FindFirstChild("BulletHole")
+	bulletHole.Parent = busyBulletHoles
+
+	bulletHole.CFrame = CFrame.new(hitPosition, hitPosition + normal)
+	if hitPart.Parent:FindFirstChild("Humanoid") then
+		if hitPart.Name == "Head" then
+			bulletHole.HitHeadshotSound:Play()
+		else
+			bulletHole.HitBodyshotSound:Play()
+		end
+	else
+		bulletHole.Image.Transparency = 0
+		bulletHole.Smoke:Emit()
+		if hitPart.Material == Enum.Material.CorrodedMetal or hitPart.Material == Enum.Material.Metal then
+			bulletHole.HitMetalSound:Play()
+		else
+			bulletHole.HitMaterialSound:Play()
+		end
+	end
+
+	task.wait(30)
+	bulletHole.Image.Transparency = 1
+	bulletHole.CFrame = CFrame.new(Vector3.new(0,-100,0), Vector3.new(0,0,0))
+end
+
 function module.gun:ShootBullet(hitPosition)
 	local shootBulletRemote = RepStorage:WaitForChild("ShootBullet")
 	local character = self.player.Character
 	local barrel = character:FindFirstChild(self.weaponName).GunComponents.Barrel
 
-	shootBulletRemote:FireAllClients(self.player.Name,hitPosition,barrel.Position)
+	shootBulletRemote:FireAllClients(self.player.Name,hitPosition,barrel)
 end
 
 function module.gun:Kill(hitPart)
@@ -141,7 +167,7 @@ function module.gun:Kill(hitPart)
 	end
 end
 
-function module.gun:Hit(hitPart,hitPosition,invincible)
+function module.gun:Hit(hitPart,hitPosition,normal,invincible)
 	local cantHit = invincible
 	local character = self.player.Character
 	local barrel = character:FindFirstChild(self.weaponName).GunComponents.Barrel
@@ -157,6 +183,8 @@ function module.gun:Hit(hitPart,hitPosition,invincible)
 			self:ShootBullet(hitPosition)
 		end
 	end
+
+	self:MakeBulletHole(hitPosition,hitPart,normal)
 end
 
 function module.gun:Wallbang(hitPosition,invincible)
@@ -168,7 +196,7 @@ function module.gun:Wallbang(hitPosition,invincible)
 	local raycastResult = game.Workspace:Raycast(hitPosition,self.aimDirection.Value * 100,raycastParams)
 
 	if raycastResult then
-		self:Hit(raycastResult.Instance,raycastResult.Position,invincible)
+		self:Hit(raycastResult.Instance,raycastResult.Position,raycastResult.Normal,invincible)
 	else
 		raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
 		raycastParams.FilterDescendantsInstances = {}
