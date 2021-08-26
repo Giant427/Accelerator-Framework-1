@@ -65,7 +65,6 @@ local function shootBullet(playerName,hitPosition,barrel,bullet)
 
 	task.wait(0.1)
 
-	print(bullet.Anchored)
 	bullet.Anchored = true
 	bullet.CFrame = CFrame.new(Vector3.new(0, -100, 0), Vector3.new(0, 0, 0))
 	bullet.Parent = availableBullets

@@ -5,6 +5,7 @@ until game:IsLoaded()
 local uis = game:GetService("UserInputService")
 local cas = game:GetService("ContextActionService")
 local runService = game:GetService("RunService")
+local gunModelsFolder = game:GetService("ReplicatedStorage"):WaitForChild("Guns"):WaitForChild("Models")
 
 local module = {}
 
@@ -60,7 +61,7 @@ end
 
 -- remote event functions
 function module.gun:Equip()
-	local gun = game:GetService("ReplicatedStorage"):WaitForChild(self.weaponName):Clone()
+	local gun = gunModelsFolder:WaitForChild(self.weaponName):Clone()
 	local handle = gun:WaitForChild("GunComponents").Handle
 	local aim = gun:WaitForChild("GunComponents").Aim
 
@@ -76,7 +77,7 @@ function module.gun:Equip()
 
 	-- no crosshair for snipers
 	if self.weaponType == "Sniper" then
-		local shootAnimation = game:GetService("ReplicatedStorage"):WaitForChild(self.weaponName.."_Animations"):WaitForChild("Viewmodel_Shoot")
+		local shootAnimation = game:GetService("ReplicatedStorage"):WaitForChild("Guns"):WaitForChild("Animations"):WaitForChild(self.weaponName.."_Animations"):WaitForChild("Viewmodel_Shoot")
 		self.player.PlayerGui.Crosshair.Frame.Visible = false
 		self.shootAnim = self.viewmodel:WaitForChild("AnimationController"):LoadAnimation(shootAnimation)
 	end

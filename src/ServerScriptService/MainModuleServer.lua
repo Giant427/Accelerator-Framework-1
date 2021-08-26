@@ -5,6 +5,7 @@ local busyBullets = bulletsFolder:WaitForChild("BusyBullets")
 local bulletHolesFolder = game.Workspace:WaitForChild("BulletHolesFolder")
 local availableBulletHoles = bulletHolesFolder:WaitForChild("AvailableBulletHoles")
 local busyBulletHoles = bulletHolesFolder:WaitForChild("BusyBulletHoles")
+local gunModelsFolder = game:GetService("ReplicatedStorage"):WaitForChild("Guns"):WaitForChild("Models")
 
 local module = {}
 
@@ -34,11 +35,10 @@ module.gun = {
 }
 
 function module.gun:Equip()
-	local gun = RepStorage:WaitForChild(self.weaponName):Clone()
+	local gun = gunModelsFolder:WaitForChild(self.weaponName):Clone()
 	local handle = gun.GunComponents.Handle
 	local aim = gun.GunComponents.Aim
 	local handle6D = Instance.new("Motor6D",self.player.Character.RightLowerArm)
-	local holdAnim = RepStorage:WaitForChild(self.weaponName.."_Animations"):WaitForChild("Hold_Char")
 
 	for i,v in pairs(gun:GetDescendants()) do
 		if v:IsA("BasePart") and v ~= handle and v ~= aim then
@@ -60,6 +60,11 @@ function module.gun:Equip()
 
 	self.equipped.Value = true
 	self.remote:FireClient(self.player,"Equip")
+
+	if self.weaponType == "Sniper" then
+		local shootAnimation = game:GetService("ReplicatedStorage"):WaitForChild("Guns"):WaitForChild("Animations"):WaitForChild(self.weaponName.."_Animations"):WaitForChild("Shoot_Char")
+		self.shootAnim = self.player.Character.Humanoid:LoadAnimation(shootAnimation)
+	end
 end
 
 function module.gun:Unequip()
@@ -219,20 +224,12 @@ function module.gun:Wallbang(hitPosition,invincible)
 end
 
 function module.gun:AimSight()
-	local aim = RepStorage:WaitForChild(self.weaponName.."_Animations"):WaitForChild("Aim_Char")
-	if self.aimAnim then
-		self.aimAnim:Play()
-	else
-		self.aimAnim = self.player.Character.Humanoid:LoadAnimation(aim)
-		self.aimAnim:Play()
-	end
+	self.aimAnim:Play()
 	self.player.Character.Humanoid.WalkSpeed = 10
 end
 
 function module.gun:AimHand()
-	if self.aimAnim then
-		self.aimAnim:Stop()
-	end
+	self.aimAnim:Stop()
 	self.player.Character.Humanoid.WalkSpeed = 16
 end
 

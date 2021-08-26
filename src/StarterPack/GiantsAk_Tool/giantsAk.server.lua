@@ -14,9 +14,11 @@ local localPlayer = tool.Parent.Parent
 	----------------------------------------------------------------
 ]]--
 
-local holdAnimation = game:GetService("ReplicatedStorage"):WaitForChild(weaponName.."_Animations"):WaitForChild("Hold_Char")
-local aimAnimation = game:GetService("ReplicatedStorage"):WaitForChild(weaponName.."_Animations"):WaitForChild("Aim_Char")
-local reloadAnimation = game:GetService("ReplicatedStorage"):WaitForChild(weaponName.."_Animations"):WaitForChild("Reload_Char")
+local gunsFolder = game:GetService("ReplicatedStorage"):WaitForChild("Guns")
+local animations = gunsFolder:WaitForChild("Animations"):WaitForChild(weaponName.."_Animations")
+local holdAnimation = animations:WaitForChild("Hold_Char")
+local aimAnimation = animations:WaitForChild("Aim_Char")
+local reloadAnimation = animations:WaitForChild("Reload_Char")
 local shootAnimation = nil
 
 repeat
@@ -29,11 +31,11 @@ local reloadAnim = localPlayer.Character.Humanoid:LoadAnimation(reloadAnimation)
 local shootAnim = nil
 
 if weaponType == "Sniper" then
-	shootAnimation = game:GetService("ReplicatedStorage"):WaitForChild(weaponName.."_Animations"):WaitForChild("Shoot_Char")
+	shootAnimation = animations:WaitForChild("Shoot_Char")
 	shootAnim = localPlayer.Character.Humanoid:LoadAnimation(shootAnimation)
 end
 
-local remote = game:GetService("ReplicatedStorage"):WaitForChild(weaponName.."_Comms")
+local remote = gunsFolder:WaitForChild("Remotes"):WaitForChild(weaponName.."_Comms")
 local weaponData = game:GetService("ReplicatedStorage"):WaitForChild("WeaponData"):WaitForChild(weaponName)
 
 local weaponVars = localPlayer:WaitForChild("PlayerVars"):WaitForChild(weaponName)
@@ -50,28 +52,28 @@ local aimOrigin = aimVars:WaitForChild("AimOrigin")
 local serverModule = require(game.ServerScriptService:WaitForChild("MainModuleServer"))
 
 local gun = serverModule.gun:New({
-	player = localPlayer;
+	player = localPlayer,
 
-	weaponName = weaponName;
-	weaponType = weaponType;
+	weaponName = weaponName,
+	weaponType = weaponType,
 
-	headshotDamage = weaponData.HeadshotDamage.Value;
-	bodyshotDamage = weaponData.BodyshotDamage.Value;
+	headshotDamage = weaponData.HeadshotDamage.Value,
+	bodyshotDamage = weaponData.BodyshotDamage.Value,
 
-	aimDirection = aimDirection;
-	aimOrigin = aimOrigin;
+	aimDirection = aimDirection,
+	aimOrigin = aimOrigin,
 
-	holdAnim = holdAnim;
-	aimAnim = aimAnim;
-	reloadAnim = reloadAnim;
-	shootAnim = shootAnim;
+	holdAnim = holdAnim,
+	aimAnim = aimAnim,
+	reloadAnim = reloadAnim,
+	shootAnim = shootAnim,
 
-	equipped = equipped;
-	reloading = reloading;
-    ammo = ammo;
-    magAmmo = magAmmo;
+	equipped = equipped,
+	reloading = reloading,
+    ammo = ammo,
+    magAmmo = magAmmo,
 
-	remote = remote;
+	remote = remote,
 })
 
 local function equip()

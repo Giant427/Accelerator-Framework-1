@@ -27,37 +27,38 @@ local magAmmo = weaponVars.MagAmmo
 local clientModule = require(game:GetService("ReplicatedStorage"):WaitForChild("MainModuleClient"))
 local weaponData = game:GetService("ReplicatedStorage"):WaitForChild("WeaponData"):WaitForChild(weaponName)
 
-local holdAnimation = game:GetService("ReplicatedStorage"):WaitForChild(weaponName.."_Animations"):WaitForChild("Viewmodel_Hold")
-local reloadAnimation = game:GetService("ReplicatedStorage"):WaitForChild(weaponName.."_Animations"):WaitForChild("Viewmodel_Reload")
-local aimAnimation = game:GetService("ReplicatedStorage"):WaitForChild(weaponName.."_Animations"):WaitForChild("Viewmodel_Aim")
+local gunsFolder = game:GetService("ReplicatedStorage"):WaitForChild("Guns")
+local animations = gunsFolder:WaitForChild("Animations"):WaitForChild(weaponName.."_Animations")
+local holdAnimation = animations:WaitForChild("Viewmodel_Hold")
+local reloadAnimation = animations:WaitForChild("Viewmodel_Reload")
+local aimAnimation = animations:WaitForChild("Viewmodel_Aim")
 
-local remote = game:GetService("ReplicatedStorage"):WaitForChild(weaponName.."_Comms")
+local remote = gunsFolder:WaitForChild("Remotes"):WaitForChild(weaponName.."_Comms")
 
 local gun = clientModule.gun:New({
-    player = localPlayer;
-    mouse = mouse;
-    viewmodel = game.Workspace.CurrentCamera:WaitForChild("Viewmodel");
+    player = localPlayer,
+    mouse = mouse,
+    viewmodel = game.Workspace.CurrentCamera:WaitForChild("Viewmodel"),
 
-    weaponName = weaponName;
-    weaponType = weaponType;
+    weaponName = weaponName,
+    weaponType = weaponType,
 
-    delay = weaponData.Delay.Value;
-    headshotDamage = weaponData.HeadshotDamage.Value;
-    bodyshotDamage = weaponData.BodyshotDamage.Value;
-    recoil = weaponData.Recoil.Value / 100;
-    recoilAngle = nil;
+    delay = weaponData.Delay.Value,
+    headshotDamage = weaponData.HeadshotDamage.Value,
+    bodyshotDamage = weaponData.BodyshotDamage.Value,
+    recoil = weaponData.Recoil.Value / 100,
 
-    holdAnim = game.Workspace.CurrentCamera:WaitForChild("Viewmodel").AnimationController:LoadAnimation(holdAnimation);
-    aimAnim = game.Workspace.CurrentCamera:WaitForChild("Viewmodel").AnimationController:LoadAnimation(aimAnimation);
-    reloadAnim = game.Workspace.CurrentCamera:WaitForChild("Viewmodel").AnimationController:LoadAnimation(reloadAnimation);
-    shootAnim = nil;
+    holdAnim = game.Workspace.CurrentCamera:WaitForChild("Viewmodel").AnimationController:LoadAnimation(holdAnimation),
+    aimAnim = game.Workspace.CurrentCamera:WaitForChild("Viewmodel").AnimationController:LoadAnimation(aimAnimation),
+    reloadAnim = game.Workspace.CurrentCamera:WaitForChild("Viewmodel").AnimationController:LoadAnimation(reloadAnimation),
+    shootAnim = nil,
 
-	equipped = equipped;
-	reloading = reloading;
-    ammo = ammo;
-    magAmmo = magAmmo;
+	equipped = equipped,
+	reloading = reloading,
+    ammo = ammo,
+    magAmmo = magAmmo,
 
-    remote = remote;
+    remote = remote,
 })
 
 remote.OnClientEvent:Connect(function(task)
