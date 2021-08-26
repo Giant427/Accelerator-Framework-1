@@ -346,6 +346,28 @@ function module.gun:SniperShoot()
 	end
 end
 
+-- used to change the transparency of the viewmodel
+function module.gun:ChangeViewmodelTransparency(value)
+	for i,v in pairs(self.viewmodel:GetChildren()) do
+		-- arms
+		if v:IsA("Folder") then
+			for _,child in pairs(v:GetChildren()) do
+				if child:IsA("BasePart") then
+					child.Transparency = value
+				end
+			end
+		end
+		-- gun
+		if v:IsA("Model") then
+			for _,child in pairs(v:GetChildren()) do
+				if child:IsA("BasePart") then
+					child.Transparency = value
+				end
+			end
+		end
+	end
+end
+
 -- aim functions
 function module.gun:AimSight()
 	self.player.PlayerGui.Crosshair.Frame.Visible = false
@@ -353,6 +375,8 @@ function module.gun:AimSight()
 	self.remote:FireServer("AimSight")
 	if self.weaponType == "Sniper" then
 		game.Workspace.CurrentCamera.FieldOfView = 40
+		self:ChangeViewmodelTransparency(1)
+		self.player.PlayerGui.Crosshair.ScopeFrame.Visible = true
 	else
 		game.Workspace.CurrentCamera.FieldOfView = 60
 	end
@@ -364,7 +388,10 @@ function module.gun:AimHand()
 	self.holdAnim:Play()
 	self.remote:FireServer("AimHand")
 
-	if self.weaponType ~= "Sniper" then
+	if self.weaponType == "Sniper" then
+		self.player.PlayerGui.Crosshair.ScopeFrame.Visible = false
+		self:ChangeViewmodelTransparency(0)
+	else
 		self.player.PlayerGui.Crosshair.Frame.Visible = true
 	end
 end
