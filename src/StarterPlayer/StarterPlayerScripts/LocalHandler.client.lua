@@ -39,16 +39,16 @@ local function updateViewmodel(dt)
 	end
 end
 
-local function shootBullet(playerName,hitPosition,barrel)
-	local bullet = availableBullets:FindFirstChild("Bullet")
+local function shootBullet(playerName,hitPosition,barrel,bullet)
+	bullet.Parent = busyBullets
+	bullet.Anchored = false
+	bullet.BodyPosition.Position = hitPosition
+
 	if playerName == localPlayer.Name then
 		-- viewmodel shoot
 		local origin = viewmodel:FindFirstChildWhichIsA("Model"):WaitForChild("GunComponents").Barrel
 		local cframe = origin.CFrame
 
-		bullet.Parent = busyBullets
-		bullet.Anchored = false
-		bullet.BodyPosition.Position = hitPosition
 		bullet.BodyGyro.CFrame = cframe
 		bullet.CFrame = cframe
 		origin.MuzzleEffect:Emit()
@@ -57,9 +57,6 @@ local function shootBullet(playerName,hitPosition,barrel)
 		-- character shoot
 		local cframe = CFrame.new(barrel.Position, hitPosition)
 
-		bullet.Parent = busyBullets
-		bullet.Anchored = false
-		bullet.BodyPosition.Position = hitPosition
 		bullet.BodyGyro.CFrame = cframe
 		bullet.CFrame = cframe
 		barrel.MuzzleEffect:Emit()
@@ -68,6 +65,7 @@ local function shootBullet(playerName,hitPosition,barrel)
 
 	task.wait(0.1)
 
+	print(bullet.Anchored)
 	bullet.Anchored = true
 	bullet.CFrame = CFrame.new(Vector3.new(0, -100, 0), Vector3.new(0, 0, 0))
 	bullet.Parent = availableBullets

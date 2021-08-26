@@ -1,4 +1,7 @@
 local RepStorage = game:GetService("ReplicatedStorage")
+local bulletsFolder = game.Workspace:WaitForChild("BulletsFolder")
+local availableBullets = bulletsFolder:WaitForChild("AvailableBullets")
+local busyBullets = bulletsFolder:WaitForChild("BusyBullets")
 local bulletHolesFolder = game.Workspace:WaitForChild("BulletHolesFolder")
 local availableBulletHoles = bulletHolesFolder:WaitForChild("AvailableBulletHoles")
 local busyBulletHoles = bulletHolesFolder:WaitForChild("BusyBulletHoles")
@@ -155,8 +158,13 @@ function module.gun:ShootBullet(hitPosition)
 	local shootBulletRemote = RepStorage:WaitForChild("ShootBullet")
 	local character = self.player.Character
 	local barrel = character:FindFirstChild(self.weaponName).GunComponents.Barrel
+	local bullet = availableBullets:FindFirstChild("Bullet")
 
-	shootBulletRemote:FireAllClients(self.player.Name,hitPosition,barrel)
+	for i,v in pairs(game.Players:GetPlayers()) do
+		bullet.Anchored = false
+		bullet:SetNetworkOwner(v)
+		shootBulletRemote:FireClient(v,self.player.Name,hitPosition,barrel,bullet)
+	end
 end
 
 function module.gun:Kill(hitPart)
