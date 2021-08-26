@@ -1,3 +1,7 @@
+repeat
+	wait()
+until game:IsLoaded()
+
 local localPlayer = game.Players.LocalPlayer
 local mouse = localPlayer:GetMouse()
 

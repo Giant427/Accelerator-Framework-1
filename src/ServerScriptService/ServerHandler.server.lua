@@ -44,6 +44,7 @@ characterUpdate.OnServerEvent:Connect(function(player,task,theta)
 			lShoulder.C0 = lShoulderC0 * CFrame.fromEulerAnglesYXZ(value*0.5, 0, 0)
 		end)
 	end
+
 	if task == "Update" then
 		local aimVars = player:WaitForChild("PlayerVars"):WaitForChild("Aim")
 		local aimDirection = aimVars:WaitForChild("AimDirection")

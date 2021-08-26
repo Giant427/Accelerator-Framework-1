@@ -2,7 +2,7 @@ local RepStorage = game:GetService("ReplicatedStorage")
 
 local module = {}
 
-module.gun = {	
+module.gun = {
 	player = nil;
 
 	weaponName = "";
@@ -28,11 +28,11 @@ module.gun = {
 }
 
 function module.gun:Equip()
-	local gun = game:GetService("ReplicatedStorage"):WaitForChild(self.weaponName):Clone()
+	local gun = RepStorage:WaitForChild(self.weaponName):Clone()
 	local handle = gun.GunComponents.Handle
 	local aim = gun.GunComponents.Aim
 	local handle6D = Instance.new("Motor6D",self.player.Character.RightLowerArm)
-	local holdAnim = game:GetService("ReplicatedStorage"):WaitForChild(self.weaponName.."_Animations"):WaitForChild("Hold_Char")
+	local holdAnim = RepStorage:WaitForChild(self.weaponName.."_Animations"):WaitForChild("Hold_Char")
 
 	for i,v in pairs(gun:GetDescendants()) do
 		if v:IsA("BasePart") and v ~= handle and v ~= aim then
@@ -92,15 +92,9 @@ function module.gun:Shoot()
 		raycastParams.FilterDescendantsInstances = {character}
 		raycastParams.IgnoreWater = true
 
-		local raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 1000,raycastParams)
+		local raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 100,raycastParams)
 
 		self.ammo.Value -= 1
-
-		if raycastResult then
-			self:Hit(raycastResult.Instance,raycastResult.Position,{character})
-			barrel.Attachment1.WorldPosition = raycastResult.Position
-		end
-
 		if self.weaponType == "Sniper" then
 			self:AimHand()
 			self.shootAnim:Play()
@@ -110,14 +104,33 @@ function module.gun:Shoot()
 			muzzleEffect:Emit()
 			shootSound:Play()
 		end
-		
-		wait(0.2)
-		barrel.Attachment1.WorldPosition = barrel.Position
+
+		if raycastResult then
+			self:Hit(raycastResult.Instance,raycastResult.Position,{character})
+		else
+			raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+			raycastParams.FilterDescendantsInstances = {}
+			raycastParams.IgnoreWater = false
+
+			raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 100,raycastParams)
+
+			if raycastResult then
+				self:ShootBullet(raycastResult.Position)
+			end
+		end
 	else
 		if self.ammo.Value == 0 and self.reloading.Value == false then
 			self:Reload()
 		end
 	end
+end
+
+function module.gun:ShootBullet(hitPosition)
+	local shootBulletRemote = RepStorage:WaitForChild("ShootBullet")
+	local character = self.player.Character
+	local barrel = character:FindFirstChild(self.weaponName).GunComponents.Barrel
+
+	shootBulletRemote:FireAllClients(self.player.Name,hitPosition,barrel.Position)
 end
 
 function module.gun:Kill(hitPart)
@@ -133,14 +146,15 @@ function module.gun:Hit(hitPart,hitPosition,invincible)
 	local character = self.player.Character
 	local barrel = character:FindFirstChild(self.weaponName).GunComponents.Barrel
 
-	barrel.Attachment1.WorldPosition = hitPosition
-
 	if hitPart.Parent:FindFirstChild("Humanoid") then
 		self:Kill(hitPart)
+		self:ShootBullet(hitPosition)
 	else
 		if hitPart.Material == Enum.Material.Glass or hitPart.Material == Enum.Material.Plastic or hitPart.Material == Enum.Material.SmoothPlastic or hitPart.Material == Enum.Material.Wood or hitPart.Material == Enum.Material.WoodPlanks then
 			table.insert(cantHit,(#cantHit + 1),hitPart)
 			self:Wallbang(hitPosition,cantHit)
+		else
+			self:ShootBullet(hitPosition)
 		end
 	end
 end
@@ -151,15 +165,25 @@ function module.gun:Wallbang(hitPosition,invincible)
 	raycastParams.FilterDescendantsInstances = invincible
 	raycastParams.IgnoreWater = true
 
-	local raycastResult = game.Workspace:Raycast(hitPosition,self.aimDirection.Value * 1000,raycastParams)
+	local raycastResult = game.Workspace:Raycast(hitPosition,self.aimDirection.Value * 100,raycastParams)
 
 	if raycastResult then
 		self:Hit(raycastResult.Instance,raycastResult.Position,invincible)
+	else
+		raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+		raycastParams.FilterDescendantsInstances = {}
+		raycastParams.IgnoreWater = false
+
+		raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 100,raycastParams)
+
+		if raycastResult then
+			self:ShootBullet(raycastResult.Position)
+		end
 	end
 end
 
 function module.gun:AimSight()
-	local aim = game:GetService("ReplicatedStorage"):WaitForChild(self.weaponName.."_Animations"):WaitForChild("Aim_Char")
+	local aim = RepStorage:WaitForChild(self.weaponName.."_Animations"):WaitForChild("Aim_Char")
 	if self.aimAnim then
 		self.aimAnim:Play()
 	else

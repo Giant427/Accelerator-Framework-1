@@ -1,3 +1,7 @@
+repeat
+	wait()
+until game:IsLoaded()
+
 local uis = game:GetService("UserInputService")
 local cas = game:GetService("ContextActionService")
 local runService = game:GetService("RunService")

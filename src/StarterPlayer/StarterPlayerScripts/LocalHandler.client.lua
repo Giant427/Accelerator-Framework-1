@@ -1,13 +1,17 @@
-local characterUpdate = game:GetService("ReplicatedStorage"):WaitForChild("CharacterUpdate")
+repeat
+	wait()
+until game:IsLoaded()
+
+local characterUpdateRemote = game:GetService("ReplicatedStorage"):WaitForChild("CharacterUpdate")
+local shootBulletRemote = game:GetService("ReplicatedStorage"):WaitForChild("ShootBullet")
+local bulletsFolder = game.Workspace:WaitForChild("BulletsFolder")
+local availableBullets = bulletsFolder:WaitForChild("AvailableBullets")
+local busyBullets = bulletsFolder:WaitForChild("BusyBullets")
 local camera = game.Workspace.CurrentCamera
 local viewmodel = game:GetService("ReplicatedStorage"):WaitForChild("Viewmodel"):Clone()
-viewmodel.Parent = game.Workspace.CurrentCamera
-
 local localPlayer = game.Players.LocalPlayer
-local mouse = localPlayer:GetMouse()
-local crosshair = localPlayer.PlayerGui:WaitForChild("Crosshair").Frame
-
 local cameraCFrame = camera.CFrame
+
 local function updateViewmodel(dt)
 	-- swaying
 	local function swayViewmodel()
@@ -35,10 +39,41 @@ local function updateViewmodel(dt)
 	end
 end
 
-game:GetService("RunService").RenderStepped:Connect(updateViewmodel)
-characterUpdate:FireServer("Setup")
+local function shootBullet(playerName,hitPosition,barrelPosition)
+	local bullet = availableBullets:FindFirstChild("Bullet")
+	if playerName == localPlayer.Name then
+		-- viewmodel shoot
+		local origin = viewmodel:FindFirstChildWhichIsA("Model"):WaitForChild("GunComponents").Barrel
+		local cframe = origin.CFrame
 
+		bullet.Parent = busyBullets
+		bullet.Anchored = false
+		bullet.BodyPosition.Position = hitPosition
+		bullet.BodyGyro.CFrame = cframe
+		bullet.CFrame = cframe
+	else
+		-- character shoot
+		local cframe = CFrame.new(barrelPosition, hitPosition)
+
+		bullet.Parent = busyBullets
+		bullet.Anchored = false
+		bullet.BodyPosition.Position = hitPosition
+		bullet.BodyGyro.CFrame = cframe
+		bullet.CFrame = cframe
+	end
+
+	task.wait(0.1)
+
+	bullet.Anchored = true
+	bullet.CFrame = CFrame.new(Vector3.new(0, -100, 0), Vector3.new(0, 0, 0))
+	bullet.Parent = availableBullets
+end
+
+viewmodel.Parent = game.Workspace.CurrentCamera
+game:GetService("RunService").RenderStepped:Connect(updateViewmodel)
+characterUpdateRemote:FireServer("Setup")
+shootBulletRemote.OnClientEvent:Connect(shootBullet)
 while wait() do
 	wait(0.1)
-	characterUpdate:FireServer("Update",viewmodel.HumanoidRootPart.CFrame)
+	characterUpdateRemote:FireServer("Update",viewmodel.HumanoidRootPart.CFrame)
 end
