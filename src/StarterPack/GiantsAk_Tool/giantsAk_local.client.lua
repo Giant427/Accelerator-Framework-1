@@ -18,20 +18,20 @@ local mouse = localPlayer:GetMouse()
 	----------------------------------------------------------------
 ]]--
 
+local weaponOffset = require(game:GetService("ReplicatedStorage"):WaitForChild("ClientModules"):WaitForChild("ViewmodelOffsets"))[weaponName]
 local weaponVars = localPlayer:WaitForChild("PlayerVars"):WaitForChild(weaponName)
 local equipped = weaponVars.Equipped
 local reloading = weaponVars.Reloading
 local ammo = weaponVars.Ammo
 local magAmmo = weaponVars.MagAmmo
 
-local clientModule = require(game:GetService("ReplicatedStorage"):WaitForChild("MainModuleClient"))
+local clientModule = require(game:GetService("ReplicatedStorage"):WaitForChild("ClientModules"):WaitForChild("MainModuleClient"))
 local weaponData = game:GetService("ReplicatedStorage"):WaitForChild("WeaponData"):WaitForChild(weaponName)
 
 local gunsFolder = game:GetService("ReplicatedStorage"):WaitForChild("Guns")
 local animations = gunsFolder:WaitForChild("Animations"):WaitForChild(weaponName.."_Animations")
 local holdAnimation = animations:WaitForChild("Viewmodel_Hold")
 local reloadAnimation = animations:WaitForChild("Viewmodel_Reload")
-local aimAnimation = animations:WaitForChild("Viewmodel_Aim")
 
 local remote = gunsFolder:WaitForChild("Remotes"):WaitForChild(weaponName.."_Comms")
 
@@ -42,6 +42,7 @@ local gun = clientModule.gun:New({
 
     weaponName = weaponName,
     weaponType = weaponType,
+    weaponOffset = weaponOffset,
 
     delay = weaponData.Delay.Value,
     headshotDamage = weaponData.HeadshotDamage.Value,
@@ -49,7 +50,6 @@ local gun = clientModule.gun:New({
     recoil = weaponData.Recoil.Value / 100,
 
     holdAnim = game.Workspace.CurrentCamera:WaitForChild("Viewmodel").AnimationController:LoadAnimation(holdAnimation),
-    aimAnim = game.Workspace.CurrentCamera:WaitForChild("Viewmodel").AnimationController:LoadAnimation(aimAnimation),
     reloadAnim = game.Workspace.CurrentCamera:WaitForChild("Viewmodel").AnimationController:LoadAnimation(reloadAnimation),
     shootAnim = nil,
 

@@ -68,7 +68,15 @@ function module.gun:Equip()
 end
 
 function module.gun:Unequip()
+	self:AimHand()
 	self.holdAnim:Stop()
+	self.reloadAnim:Stop()
+	self.aimAnim:Stop()
+
+	if self.shootAnim then
+		self.shootAnim:Stop()
+	end
+
 	self.player.Character:FindFirstChild(self.weaponName):Destroy()
 	self.equipped.Value = false
 	self.remote:FireClient(self.player,"Unequip")
@@ -117,7 +125,7 @@ function module.gun:Shoot()
 			self:Hit(raycastResult.Instance,raycastResult.Position,raycastResult.Normal,{character})
 		else
 			raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-			raycastParams.FilterDescendantsInstances = {}
+			raycastParams.FilterDescendantsInstances = {self.player.Character}
 			raycastParams.IgnoreWater = false
 
 			raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 1000,raycastParams)
@@ -139,11 +147,18 @@ function module.gun:MakeBulletHole(Task,hitPosition,hitPart,normal)
 	bulletHole.CFrame = CFrame.new(hitPosition, hitPosition + normal)
 
 	if Task == "Hurt" then
+		local waitTime = 0
 		if hitPart.Name == "Head" then
 			bulletHole.HitHeadshotSound:Play()
+			waitTime = bulletHole.HitHeadshotSound.TimeLength
 		else
 			bulletHole.HitBodyshotSound:Play()
+			waitTime = bulletHole.HitHeadshotSound.TimeLength
 		end
+
+		task.wait(waitTime)
+		bulletHole.CFrame = CFrame.new(Vector3.new(0,-100,0), Vector3.new(0,0,0))
+		bulletHole.Parent = availableBulletHoles
 	end
 	if Task == "Hit" then
 		bulletHole.Image.Transparency = 0
@@ -153,12 +168,13 @@ function module.gun:MakeBulletHole(Task,hitPosition,hitPart,normal)
 		else
 			bulletHole.HitMaterialSound:Play()
 		end
+		task.wait(10)
+		bulletHole.Image.Transparency = 1
+		bulletHole.CFrame = CFrame.new(Vector3.new(0,-100,0), Vector3.new(0,0,0))
+		bulletHole.Parent = availableBulletHoles
 	end
 
-	task.wait(10)
-	bulletHole.Image.Transparency = 1
-	bulletHole.CFrame = CFrame.new(Vector3.new(0,-100,0), Vector3.new(0,0,0))
-	bulletHole.Parent = availableBulletHoles
+
 end
 
 function module.gun:ShootBullet(hitPosition)
@@ -219,7 +235,7 @@ function module.gun:Wallbang(hitPosition,invincible)
 		self:Hit(raycastResult.Instance,raycastResult.Position,raycastResult.Normal,invincible_2)
 	else
 		raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-		raycastParams.FilterDescendantsInstances = {}
+		raycastParams.FilterDescendantsInstances = {self.player.Character}
 		raycastParams.IgnoreWater = false
 
 		raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 1000,raycastParams)

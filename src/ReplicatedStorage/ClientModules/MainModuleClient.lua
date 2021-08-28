@@ -1,11 +1,13 @@
 repeat
-	wait()
+	task.wait()
 until game:IsLoaded()
 
 local uis = game:GetService("UserInputService")
 local cas = game:GetService("ContextActionService")
 local runService = game:GetService("RunService")
 local gunModelsFolder = game:GetService("ReplicatedStorage"):WaitForChild("Guns"):WaitForChild("Models")
+local tweenService = game:GetService("TweenService")
+local tweeningInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut, 0, false)
 
 local module = {}
 
@@ -18,6 +20,7 @@ module.gun = {
 	-- weapon details
 	weaponName = "",
 	weaponType = "",
+	weaponOffset = CFrame.new(),
 
 	-- stats for the gun
 	delay = 0,
@@ -27,14 +30,24 @@ module.gun = {
 	lastClick = tick(),
 	recoilReset = 1,
 	recoilPattern = {
+		{3,   4,   4, 0.77, 1},
+		{6, 0.1, 0.1, 0.4, -40},
+		{9,   4,   4, 0.77, -1},
+		{12, 0.1, 0.1, 0.4, 40},
+		{15,   4,   4, 0.77, 1},
+		{18, 0.1, 0.1, 0.4, -40},
+		{21,   4,   4, 0.77, -1},
+		{24, 0.1, 0.1, 0.4, 40},
+		{27,   4,   4, 0.77, 1},
+		{30, 0.1, 0.1, 0.4, -40},
+	},
+	--[[
 		{10,   4,   4, 0.77, 0.1},
 		{20, 0.1, 0.1, 0.77, -80},
 		{30, 0.1, 0.1, 0.77,  80},
-	},
-
+	]]--
 	-- animations
 	holdAnim = nil,
-	aimAnim = nil,
 	shootAnim = nil,
 	reloadAnim = nil,
 
@@ -44,9 +57,10 @@ module.gun = {
 	ammo = nil,
 	magAmmo = nil,
 
-	-- used for full auto configuration
+	-- used for combat
 	playerHoldingMouse = false,
 	canFire = true,
+	processedAim = true,
 
 	remote = nil,
 }
@@ -64,13 +78,6 @@ function module.gun:Equip()
 	local gun = gunModelsFolder:WaitForChild(self.weaponName):Clone()
 	local handle = gun:WaitForChild("GunComponents").Handle
 	local aim = gun:WaitForChild("GunComponents").Aim
-
-	-- make viewmodel visible
-	for _,v in pairs(self.viewmodel:GetDescendants()) do
-		if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" and v.Name ~= "CameraBone" then
-			v.Transparency = 0
-		end
-	end
 
 	self.mouse.Icon = game:GetService("ReplicatedStorage"):WaitForChild("InvisibleCrosshair").Image
 	self.player.PlayerGui.Crosshair.Frame.Visible = true
@@ -100,8 +107,10 @@ function module.gun:Equip()
 	self.viewmodel:WaitForChild("HumanoidRootPart").right.Part0 = handle
 	self.viewmodel:WaitForChild("HumanoidRootPart").left.Part0 = handle
 	self.holdAnim:Play()
-
+	self:AimHand()
+	self.viewmodel:WaitForChild("HumanoidRootPart").Handle.C0 = self.weaponOffset
 	self.equipped.Value = true
+	self:ChangeViewmodelTransparency(0)
 
 	-----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -112,15 +121,16 @@ function module.gun:Equip()
 end
 
 function module.gun:Unequip()
-	self.equipped.Value = false
-	self.holdAnim:Stop()
-	self.player.PlayerGui.Crosshair.Frame.Visible = false
-	self.mouse.Icon = ""
+	-- invis the viewmodel
+	self:ChangeViewmodelTransparency(1)
 
-	-- unbinding actions
-	cas:UnbindAction("Reload")
-	cas:UnbindAction("MouseButton1")
-	cas:UnbindAction("MouseButton2")
+	self.equipped.Value = false
+
+	self.holdAnim:Stop()
+	self.reloadAnim:Stop()
+	if self.shootAnim then
+		self.shootAnim:Stop()
+	end
 
 	-- remove welds
 	self.viewmodel:WaitForChild("HumanoidRootPart").Handle.Part1 = nil
@@ -129,12 +139,14 @@ function module.gun:Unequip()
 
 	self.viewmodel:WaitForChild(self.weaponName):Destroy()
 
-	-- invis the viewmodel
-	for _,v in pairs(self.viewmodel:GetDescendants()) do
-		if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" and v.Name ~= "CameraBone" then
-			v.Transparency = 1
-		end
-	end
+	-- unbinding actions
+	cas:UnbindAction("Reload")
+	cas:UnbindAction("MouseButton1")
+	cas:UnbindAction("MouseButton2")
+
+	self.mouse.Icon = ""
+	self.player.PlayerGui.Crosshair.Frame.Visible = false
+	self.player.PlayerGui.Crosshair.ScopeFrame.Visible = false
 end
 
 -- player input
@@ -165,7 +177,7 @@ function module.gun:EnableInput()
 					if self.canFire then
 						self.canFire = false
 						self:Shoot()
-						wait(self.delay)
+						task.wait(self.delay)
 						self.canFire = true
 					end
 				end
@@ -175,7 +187,7 @@ function module.gun:EnableInput()
 					if self.canFire then
 						self.canFire = false
 						self:BurstShoot()
-						wait(self.delay)
+						task.wait(self.delay)
 						self.canFire = true
 					end
 				end
@@ -185,8 +197,6 @@ function module.gun:EnableInput()
 					if self.canFire then
 						self.canFire = false
 						self:SniperShoot()
-						wait(self.delay)
-						self.canFire = true
 					end
 				end
 			end
@@ -252,8 +262,9 @@ function module.gun:Reload()
 		self:AimHand()
 		self.remote:FireServer("Reload")
 		self.reloadAnim:Play()
-		wait(self.reloadAnim.Length)
+		task.wait(self.reloadAnim.Length)
 		self.reloading.Value = false
+		self.canFire = true
 	end
 end
 
@@ -292,11 +303,20 @@ function module.gun:Recoil()
 		end
 	end
 
-	local originalCFrame = self.viewmodel.HumanoidRootPart.CFrame
-	self.viewmodel.HumanoidRootPart.CFrame = self.viewmodel.HumanoidRootPart.CFrame * CFrame.new(0,0,-1)
-	ShootRecoil()
-	task.wait()
-	self.viewmodel.HumanoidRootPart.CFrame = originalCFrame
+	task.spawn(function()
+		ShootRecoil()
+		local num = 0
+		local coil = 2
+		local cframe = 0
+		while math.abs(num - coil) > 0.01 do
+			num = lerp(num, coil, 0.77)
+			local rec = num / 1
+			cframe += rec
+			self.viewmodel.HumanoidRootPart.Handle.C0 = self.viewmodel.HumanoidRootPart.Handle.C0 * CFrame.new(0, 0, math.rad(rec))
+			Run.RenderStepped:Wait()
+		end
+		self.viewmodel.HumanoidRootPart.Handle.C0 = self.viewmodel.HumanoidRootPart.Handle.C0 * CFrame.new(0, 0, -math.rad(cframe))
+	end)
 end
 
 -- used for semi auto and full auto configurations
@@ -308,8 +328,10 @@ function module.gun:Shoot()
 	else
 		if self.ammo.Value == 0 and self.reloading.Value == false then
 			self:Reload()
-			return
 		end
+	end
+	if self.ammo.Value == 0 and self.reloading.Value == false then
+		self:Reload()
 	end
 end
 
@@ -327,7 +349,10 @@ function module.gun:BurstShoot()
 				return
 			end
 		end
-		wait(0.1)
+		task.wait(0.1)
+		if self.ammo.Value == 0 and self.reloading.Value == false then
+			self:Reload()
+		end
 	end
 end
 
@@ -339,11 +364,16 @@ function module.gun:SniperShoot()
 		self.ammo.Value -= 1
 		self:AimHand()
 		self.shootAnim:Play()
+		task.wait(self.shootAnim.Length)
+		self.canFire = true
 	else
 		if self.ammo.Value == 0 and self.reloading.Value == false then
 			self:Reload()
 			return
 		end
+	end
+	if self.ammo.Value == 0 and self.reloading.Value == false then
+		self:Reload()
 	end
 end
 
@@ -371,30 +401,47 @@ end
 
 -- aim functions
 function module.gun:AimSight()
+	repeat
+		task.wait()
+	until self.processedAim == true
+	self.processedAim = false
 	self.player.PlayerGui.Crosshair.Frame.Visible = false
-	self.aimAnim:Play()
 	self.remote:FireServer("AimSight")
+	tweenService:Create(self.viewmodel.HumanoidRootPart.Handle,tweeningInfo,{C0 = CFrame.new(0,0,0, 1,0,0, 0,1,0, 0,0,1)}):Play()
+	runService.RenderStepped:Wait()
+
 	if self.weaponType == "Sniper" then
-		game.Workspace.CurrentCamera.FieldOfView = 40
+		tweenService:Create(game.Workspace.CurrentCamera,tweeningInfo,{FieldOfView = 40}):Play()
+		task.wait(tweeningInfo.Time)
 		self:ChangeViewmodelTransparency(1)
 		self.player.PlayerGui.Crosshair.ScopeFrame.Visible = true
 	else
-		game.Workspace.CurrentCamera.FieldOfView = 60
+		tweenService:Create(game.Workspace.CurrentCamera,tweeningInfo,{FieldOfView = 60}):Play()
+		task.wait(tweeningInfo.Time)
 	end
+
+	self.processedAim = true
 end
 
 function module.gun:AimHand()
-	game.Workspace.CurrentCamera.FieldOfView = 70
-	self.aimAnim:Stop()
-	self.holdAnim:Play()
-	self.remote:FireServer("AimHand")
+	repeat
+		task.wait()
+	until self.processedAim == true
+	self.processedAim = false
 
+	runService.RenderStepped:Wait()
+	self.player.PlayerGui.Crosshair.ScopeFrame.Visible = false
+	self.remote:FireServer("AimHand")
 	if self.weaponType == "Sniper" then
-		self.player.PlayerGui.Crosshair.ScopeFrame.Visible = false
 		self:ChangeViewmodelTransparency(0)
 	else
 		self.player.PlayerGui.Crosshair.Frame.Visible = true
 	end
+	tweenService:Create(game.Workspace.CurrentCamera,tweeningInfo,{FieldOfView = 70}):Play()
+	tweenService:Create(self.viewmodel.HumanoidRootPart.Handle,tweeningInfo,{C0 = self.weaponOffset}):Play()
+	task.wait(tweeningInfo.Time)
+
+	self.processedAim = true
 end
 
 return module
