@@ -10,42 +10,32 @@ local busyBullets = bulletsFolder:WaitForChild("BusyBullets")
 local camera = game.Workspace.CurrentCamera
 local viewmodel = game:GetService("ReplicatedStorage"):WaitForChild("Viewmodel"):Clone()
 local localPlayer = game.Players.LocalPlayer
-local cameraCFrame = camera.CFrame
-local bobbing = {
-	{  4,   -4, 0.77,  40},
-	{0.1, -0.1,  0.4, -40},
-	{  4,   -4, 0.77,  40},
-	{0.1, -0.1,  0.4, -40},
-}
 
 -- swaying
 local function swayViewmodel()
 	local sway = CFrame.new(0,0,0)
 	local mult = 1
-	local rotation = game.Workspace.CurrentCamera.CFrame:ToObjectSpace(cameraCFrame)
+	local rotation = game.Workspace.CurrentCamera.CFrame:ToObjectSpace(camera.CFrame)
 	local x,y,z = rotation:ToOrientation()
 	sway = sway:Lerp(CFrame.Angles(math.sin(x) * mult,math.sin(y) * mult,0), 0.5)
 	viewmodel.HumanoidRootPart.CFrame = camera.CFrame * sway
-	cameraCFrame = camera.CFrame
 end
 
 -- bobbing
-local function bobViewmodel(alpha)
-	local currentCFrame = camera.CFrame
+local function bobViewmodel(mult,alpha)
 	local t = tick()
-	local x = math.cos(t * 10) * alpha
-	local y = math.abs(math.sin(t * 10)) * alpha
-	local cframe = currentCFrame * CFrame.new(x, y, 0)
-	camera.CFrame = camera.CFrame * CFrame.new(x, y, 0)
+	local x = math.cos(t * mult) * alpha
+	local y = math.abs(math.sin(t * mult)) * alpha
+	viewmodel.HumanoidRootPart.CFrame = viewmodel.HumanoidRootPart.CFrame * CFrame.new(x, y, 0)
 end
 
 local function updateViewmodel(dt)
 	swayViewmodel()
 	if localPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0,0,0) then
 		if localPlayer.Character.Humanoid.WalkSpeed >= 16 then
-			bobViewmodel(0.1)
+			bobViewmodel(5,0.3)
 		elseif localPlayer.Character.Humanoid.WalkSpeed < 16 then
-			bobViewmodel(0.01)
+			bobViewmodel(5,0.05)
 		end
 	end
 end
