@@ -4,40 +4,42 @@ until game:IsLoaded()
 
 local characterUpdateRemote = game:GetService("ReplicatedStorage"):WaitForChild("CharacterUpdate")
 local shootBulletRemote = game:GetService("ReplicatedStorage"):WaitForChild("ShootBullet")
+
 local bulletsFolder = game.Workspace:WaitForChild("BulletsFolder")
 local availableBullets = bulletsFolder:WaitForChild("AvailableBullets")
 local busyBullets = bulletsFolder:WaitForChild("BusyBullets")
+
 local camera = game.Workspace.CurrentCamera
-local viewmodel = game:GetService("ReplicatedStorage"):WaitForChild("Viewmodel"):Clone()
 local localPlayer = game.Players.LocalPlayer
+local viewmodel = game:GetService("ReplicatedStorage"):WaitForChild("Viewmodel"):Clone()
 
--- swaying
-local function swayViewmodel()
-	local sway = CFrame.new(0,0,0)
-	local mult = 1
-	local rotation = game.Workspace.CurrentCamera.CFrame:ToObjectSpace(camera.CFrame)
-	local x,y,z = rotation:ToOrientation()
-	sway = sway:Lerp(CFrame.Angles(math.sin(x) * mult,math.sin(y) * mult,0), 0.5)
-	viewmodel.HumanoidRootPart.CFrame = camera.CFrame * sway
-end
+local springModule = require(game:GetService("ReplicatedStorage"):WaitForChild("ClientModules"):WaitForChild("Spring"))
+local walkCycleSpring = springModule:New()
+local swaySpring = springModule:New()
 
--- bobbing
-local function bobViewmodel(mult,alpha)
-	local t = tick()
-	local x = math.cos(t * mult) * alpha
-	local y = math.abs(math.sin(t * mult)) * alpha
-	viewmodel.HumanoidRootPart.CFrame = viewmodel.HumanoidRootPart.CFrame * CFrame.new(x, y, 0)
+-- getBobbing
+local function getBobbing(addition,speed,modifier)
+	return math.sin(tick()*addition*speed)*modifier
 end
 
 local function updateViewmodel(dt)
-	swayViewmodel()
-	if localPlayer.Character.Humanoid.MoveDirection ~= Vector3.new(0,0,0) then
-		if localPlayer.Character.Humanoid.WalkSpeed >= 16 then
-			bobViewmodel(5,0.3)
-		elseif localPlayer.Character.Humanoid.WalkSpeed < 16 then
-			bobViewmodel(5,0.05)
-		end
-	end
+	local velocity = localPlayer.Character.HumanoidRootPart.Velocity
+	local mouseDelts = game:GetService("UserInputService"):GetMouseDelta()
+	swaySpring:shove(Vector3.new(mouseDelts.X / 200, mouseDelts.Y / 200))
+
+	local speed = 0.8
+	local modifier = 0.1
+	local movementSway = Vector3.new(getBobbing(10,speed,modifier),getBobbing(5,speed,modifier),getBobbing(5,speed,modifier))
+	walkCycleSpring:shove((movementSway / 25) * dt * 60 * velocity.Magnitude)
+
+	local sway = swaySpring:update(dt)
+	local walkCycle = walkCycleSpring:update(dt)
+
+	viewmodel.HumanoidRootPart.CFrame = camera.CFrame
+	viewmodel.HumanoidRootPart.CFrame = viewmodel.HumanoidRootPart.CFrame:ToWorldSpace(CFrame.new(walkCycle.x / 2,walkCycle.y / 2,0))
+
+	viewmodel.HumanoidRootPart.CFrame = viewmodel.HumanoidRootPart.CFrame * CFrame.Angles(0,sway.x,sway.y)
+	viewmodel.HumanoidRootPart.CFrame = viewmodel.HumanoidRootPart.CFrame * CFrame.Angles(walkCycle.x / 2,walkCycle.y / 2,0)
 end
 
 local function shootBullet(playerName,hitPosition,barrel,bullet)
