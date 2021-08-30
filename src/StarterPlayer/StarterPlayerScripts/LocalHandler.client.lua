@@ -23,7 +23,7 @@ local function getBobbing(addition,speed,modifier)
 end
 
 local function updateViewmodel(dt)
-	local velocity = localPlayer.Character.HumanoidRootPart.Velocity
+	local velocity = localPlayer.Character.HumanoidRootPart.AssemblyLinearVelocity
 	local mouseDelts = game:GetService("UserInputService"):GetMouseDelta()
 	swaySpring:shove(Vector3.new(mouseDelts.X / 200, mouseDelts.Y / 200))
 
