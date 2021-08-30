@@ -182,7 +182,7 @@ function module.gun:ShootBullet()
 	for i,v in pairs(game.Players:GetPlayers()) do
 		bullet.Anchored = false
 		bullet:SetNetworkOwner(v)
-		shootBulletRemote:FireClient(v,self.player.Name,self.aimDirection.Value,barrel,bullet)
+		shootBulletRemote:FireClient(v,self.player.Name,barrel,bullet)
 	end
 end
 

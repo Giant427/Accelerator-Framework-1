@@ -42,7 +42,7 @@ local function updateViewmodel(dt)
 	viewmodel.HumanoidRootPart.CFrame = viewmodel.HumanoidRootPart.CFrame * CFrame.Angles(walkCycle.x / 2,walkCycle.y / 2,0)
 end
 
-local function shootBullet(playerName,hitPosition,barrel,bullet)
+local function shootBullet(playerName,barrel,bullet)
 	bullet.Parent = busyBullets
 	local bulletSpring = springModule:New()
 	local renderStepped
