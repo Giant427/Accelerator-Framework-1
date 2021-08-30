@@ -25,7 +25,7 @@ end
 local function updateViewmodel(dt)
 	local velocity = localPlayer.Character.HumanoidRootPart.AssemblyLinearVelocity
 	local mouseDelts = game:GetService("UserInputService"):GetMouseDelta()
-	swaySpring:shove(Vector3.new(mouseDelts.X / 200, mouseDelts.Y / 200))
+	swaySpring:shove(Vector3.new(mouseDelts.X / 200, mouseDelts.Y / 400))
 
 	local speed = 0.8
 	local modifier = 0.1
@@ -44,30 +44,35 @@ end
 
 local function shootBullet(playerName,hitPosition,barrel,bullet)
 	bullet.Parent = busyBullets
+	local bulletSpring = springModule:New()
+	local renderStepped
+
+	local function update(dt)
+		local movement = bulletSpring:update(dt)
+		bullet.CFrame = bullet.CFrame * CFrame.new(0,0,-movement.Z)
+	end
+
 	if playerName == localPlayer.Name then
 		-- viewmodel shoot
 		local origin = viewmodel:FindFirstChildWhichIsA("Model"):WaitForChild("GunComponents").Barrel
-		local cframe = CFrame.new(origin.Position,hitPosition)
-		bullet.Anchored = false
-		bullet.BodyPosition.Position = hitPosition
+		local cframe = origin.CFrame
 		bullet.Transparency = 0
-		bullet.BodyGyro.CFrame = cframe
 		bullet.CFrame = cframe
 		origin.MuzzleEffect:Emit()
 		origin.Smoke:Emit()
 	else
 		-- character shoot
-		local cframe = CFrame.new(barrel.Position,hitPosition)
-		bullet.Anchored = false
-		bullet.BodyPosition.Position = hitPosition
+		local cframe = barrel.CFrame
 		bullet.Transparency = 0
-		bullet.BodyGyro.CFrame = cframe
 		bullet.CFrame = cframe
 		barrel.MuzzleEffect:Emit()
 		barrel.Smoke:Emit()
 	end
 
+	bulletSpring:shove(Vector3.new(0,0,100))
+	renderStepped = game:GetService("RunService").RenderStepped:Connect(update)
 	task.wait(0.1)
+	renderStepped:Disconnect()
 	bullet.Transparency = 1
 	bullet.Anchored = true
 	bullet.CFrame = CFrame.new(Vector3.new(0, -100, 0), Vector3.new(0, 0, 0))

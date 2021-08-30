@@ -120,19 +120,15 @@ function module.gun:Shoot()
 		else
 			shootSound:Play()
 		end
-
+		self:ShootBullet()
 		if raycastResult then
-			self:Hit(raycastResult.Instance,raycastResult.Position,raycastResult.Normal,{character})
+			self:Hit(raycastResult.Instance,raycastResult.Position,raycastResult.Normal,{character})		
 		else
 			raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
 			raycastParams.FilterDescendantsInstances = {self.player.Character}
 			raycastParams.IgnoreWater = false
 
 			raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 1000,raycastParams)
-
-			if raycastResult then
-				self:ShootBullet(raycastResult.Position)
-			end
 		end
 	else
 		if self.ammo.Value == 0 and self.reloading.Value == false then
@@ -177,7 +173,7 @@ function module.gun:MakeBulletHole(Task,hitPosition,hitPart,normal)
 
 end
 
-function module.gun:ShootBullet(hitPosition)
+function module.gun:ShootBullet()
 	local shootBulletRemote = RepStorage:WaitForChild("ShootBullet")
 	local character = self.player.Character
 	local barrel = character:FindFirstChild(self.weaponName).GunComponents.Barrel
@@ -186,7 +182,7 @@ function module.gun:ShootBullet(hitPosition)
 	for i,v in pairs(game.Players:GetPlayers()) do
 		bullet.Anchored = false
 		bullet:SetNetworkOwner(v)
-		shootBulletRemote:FireClient(v,self.player.Name,hitPosition,barrel,bullet)
+		shootBulletRemote:FireClient(v,self.player.Name,self.aimDirection.Value,barrel,bullet)
 	end
 end
 
@@ -200,8 +196,6 @@ end
 
 function module.gun:Hit(hitPart,hitPosition,normal,invincible)
 	local cantHit = invincible
-	local character = self.player.Character
-	local barrel = character:FindFirstChild(self.weaponName).GunComponents.Barrel
 
 	local function bulletHole(Task)
 		self:MakeBulletHole(Task,hitPosition,hitPart,normal)
@@ -210,14 +204,11 @@ function module.gun:Hit(hitPart,hitPosition,normal,invincible)
 	if hitPart:FindFirstAncestorWhichIsA("Model"):FindFirstChildWhichIsA("Humanoid") then
 		task.spawn(bulletHole,"Hurt")
 		self:Kill(hitPart)
-		self:ShootBullet(hitPosition)
 	else
 		task.spawn(bulletHole,"Hit")
 		if hitPart.Material == Enum.Material.Glass or hitPart.Material == Enum.Material.Plastic or hitPart.Material == Enum.Material.SmoothPlastic or hitPart.Material == Enum.Material.Wood or hitPart.Material == Enum.Material.WoodPlanks then
 			table.insert(cantHit,hitPart)
 			self:Wallbang(hitPosition,cantHit)
-		else
-			self:ShootBullet(hitPosition)
 		end
 	end
 end
@@ -239,10 +230,6 @@ function module.gun:Wallbang(hitPosition,invincible)
 		raycastParams.IgnoreWater = false
 
 		raycastResult = game.Workspace:Raycast(self.aimOrigin.Value,self.aimDirection.Value * 1000,raycastParams)
-
-		if raycastResult then
-			self:ShootBullet(raycastResult.Position)
-		end
 	end
 end
 
