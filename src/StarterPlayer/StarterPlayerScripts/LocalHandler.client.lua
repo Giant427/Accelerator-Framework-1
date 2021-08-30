@@ -71,7 +71,7 @@ local function shootBullet(playerName,hitPosition,barrel,bullet)
 
 	bulletSpring:shove(Vector3.new(0,0,100))
 	renderStepped = game:GetService("RunService").RenderStepped:Connect(update)
-	task.wait(0.1)
+	task.wait(0.2)
 	renderStepped:Disconnect()
 	bullet.Transparency = 1
 	bullet.Anchored = true
