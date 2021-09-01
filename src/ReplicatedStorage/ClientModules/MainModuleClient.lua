@@ -420,6 +420,10 @@ function module.gun:AimSight()
 		task.wait(tweeningInfo.Time)
 	end
 
+	self.player.PlayerScripts.DynamicBlur.Disabled = false
+	if game.Lighting:FindFirstChild("DepthOfField") then
+		game.Lighting:WaitForChild("DepthOfField").Enabled = true
+	end
 	self.processedAim = true
 end
 
@@ -429,6 +433,10 @@ function module.gun:AimHand()
 	until self.processedAim == true
 	self.processedAim = false
 
+	if game.Lighting:FindFirstChild("DepthOfField") then
+		game.Lighting:WaitForChild("DepthOfField").Enabled = false
+	end
+	self.player.PlayerScripts.DynamicBlur.Disabled = true
 	runService.RenderStepped:Wait()
 	self.player.PlayerGui.Crosshair.ScopeFrame.Visible = false
 	self.remote:FireServer("AimHand")
